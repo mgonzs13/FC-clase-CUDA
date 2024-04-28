@@ -1,0 +1,774 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\begin_preamble
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+\pagestyle{fancy}
+\fancyhf{} % borrar todos los ajustes
+
+% En lo siguiente, fancyhead sirve para configurar la cabecera, fancyfoot para el pie.
+% Justificación: C=centered, R=right, L=left, (nada)=LRC
+% Página: O=odd, E=even, (nada)=OE
+\fancyhead[RO,LE]{Grado en Ing. Datos e IA. ULE}
+\fancyhead[LO,RE]{Fundamentos de Computadores}
+\fancyfoot[LO,CE]{Pr\'actica 5 CUDA}
+\fancyfoot[RO,CE]{\thepage}
+% Modifica el ancho de las líneas de cabecera y pie
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\newcommand{\bigrule}{\titlerule[0.5mm]}
+\date{}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language spanish
+\language_package default
+\inputencoding auto
+\fontencoding 
+\font_roman "cmr" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize a4paper
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\use_minted 0
+\index Índice
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle fancy
+\bullet 0 0 0 -1
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Práctica 5.
+ Introducción a CUDA.
+\end_layout
+
+\begin_layout Paragraph
+Objetivos de la práctica:
+\end_layout
+
+\begin_layout Itemize
+Adquirir la capacidad de programar en lenguaje C con CUDA.
+\end_layout
+
+\begin_layout Itemize
+Adquirir la capacidad de resolución de problemas paralelos en GPU.
+\end_layout
+
+\begin_layout Itemize
+Comprender los conceptos básicos de CUDA: hilos, bloques, grids.
+\end_layout
+
+\begin_layout Itemize
+Comprender los tipos de funciones de CUDA.
+\end_layout
+
+\begin_layout Itemize
+Adquirir la capacidad de paralelizar un programa mediante GPU.
+\end_layout
+
+\begin_layout Section
+Introducción
+\end_layout
+
+\begin_layout Standard
+Las 
+\shape italic
+Graphics Processing Units
+\shape default
+ (GPU) tienen una capacidad de instrucciones mucho mayor y un ancho de banda
+ de memoria más alto que una 
+\shape italic
+Central Processing Unit
+\shape default
+ (CPU), dentro de un rango de precio y consumo de energía similares.
+ Muchas aplicaciones aprovechan estas capacidades para obtener un funcionamiento
+ más rápido en la GPU que en la CPU.
+ Otros dispositivos, como las FPGA, también son muy eficientes energéticamente,
+ pero tienen menos flexibilidad de programación que las GPUs.
+ Esta diferencia de capacidad entre la GPU y la CPU existe porque están
+ diseñadas con objetivos diferentes en mente.
+ Mientras que las CPUs están diseñadas para sobresalir en la ejecución de
+ una secuencia de operaciones, llamada hilo, y puede ejecutar unas pocas
+ decenas de estos hilos en paralelo; la GPU está diseñada para sobresalir
+ en la ejecución de miles de hilos en paralelo.
+ 
+\end_layout
+
+\begin_layout Standard
+De esta manera, la GPU está especializada en cálculos altamente paralelos
+ y, por lo tanto, está diseñada de manera que más transistores se dedican
+ al procesamiento de datos en lugar de almacenamiento en caché y control
+ de flujo de datos.
+ La siguiente figura muestra una distribución de recursos comparando una
+ CPU con una GPU.
+ Dedicar más transistores al procesamiento de datos, por ejemplo, cálculos
+ de coma flotante, es beneficioso para cálculos altamente paralelos; la
+ GPU puede ocultar las latencias de acceso a memoria con cálculos, en lugar
+ de depender de grandes cachés de datos y un control de flujo complejo para
+ evitar largas latencias de acceso a memoria, ambas costosas en términos
+ de transistores.
+ En general, una aplicación tiene una combinación de partes paralelas y
+ partes secuenciales, por lo que los sistemas se diseñan con una mezcla
+ de GPUs y CPUs para maximizar el rendimiento general.
+ Las aplicaciones con un alto grado de paralelismo pueden aprovechar esta
+ naturaleza masivamente paralela de la GPU para lograr un rendimiento superior
+ al de la CPU.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename images/gpu-devotes-more-transistors-to-data-processing.png
+	scale 43
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+CUDA
+\end_layout
+
+\begin_layout Standard
+La programación de CUDA en C es un enfoque para aprovechar las capacidades
+ computacionales de las GPUs de NVIDIA para tareas de procesamiento de propósito
+ general.
+ Permite a los desarrolladores trasladar porciones paralelizables de su
+ código a la GPU, aprovechando su arquitectura masivamente paralela para
+ lograr mejoras significativas en la velocidad de procesamiento en comparación
+ con la ejecución en CPU.
+\end_layout
+
+\begin_layout Subsection
+Gestionar la transferencia de datos
+\end_layout
+
+\begin_layout Standard
+En el núcleo de la programación CUDA se encuentran los conceptos del host
+ y el dispositivo.
+ El 
+\series bold
+host
+\series default
+ se refiere a la CPU, donde se ejecuta el programa principal, y el 
+\series bold
+dispositivo
+\series default
+ se refiere a la GPU, que ejecuta los "kernels" de CUDA.
+ Estos kernels son funciones que se ejecutan en paralelo por muchos hilos
+ en la GPU.
+ La gestión de la memoria es crucial en la programación CUDA.
+ Los desarrolladores deben administrar la memoria entre el host y el dispositivo
+ de manera eficiente.
+ CUDA provee funciones como 
+\series bold
+cudaMemcpy
+\series default
+ para transferir datos entre los espacios de memoria de la CPU y la GPU.
+ Esta transferencia implica copiar datos desde la memoria del host al dispositiv
+o (y viceversa) para asegurar que la GPU pueda acceder a los datos necesarios
+ para el procesamiento.
+ La optimización del código en CUDA implica consideraciones como minimizar
+ las transferencias de datos entre el host y el dispositivo, optimizar los
+ patrones de acceso a memoria para maximizar el rendimiento y utilizar de
+ manera efectiva las capacidades de procesamiento paralelo de la GPU.
+ Comprender las complejidades de la jerarquía de memoria, la organización
+ de hilos y el diseño de kernels es crucial para lograr un rendimiento óptimo
+ en aplicaciones CUDA.
+\end_layout
+
+\begin_layout Subsection
+Bloques y hilos
+\end_layout
+
+\begin_layout Standard
+\align block
+Los bloques y los hilos son elementos fundamentales en CUDA.
+ Los 
+\series bold
+bloques
+\series default
+ son grupos de hilos que se ejecutan de manera independiente y pueden ser
+ programados para correr en multiprocesadores dentro de la GPU.
+ Los hilos de un bloque pueden comunicarse y sincronizarse usando memoria
+ compartida, lo que permite la cooperación entre hilos que trabajan en los
+ mismos datos.
+ Los 
+\series bold
+hilos
+\series default
+ son la unidad más pequeña de ejecución en CUDA.
+ Ejecutan código de manera concurrente y realizan tareas específicas.
+ En CUDA, miles o incluso millones de hilos pueden ejecutarse simultáneamente.
+ Los hilos dentro del mismo bloque pueden cooperar y sincronizarse utilizando
+ memoria compartida.
+\end_layout
+
+\begin_layout Standard
+\align block
+CUDA utiliza una estructura jerárquica para los hilos dentro de los bloques.
+ Los hilos se organizan en una cuadrícula 1D, 2D o 3D dentro de un bloque,
+ lo que permite la indexación multidimensional para acceder a datos y realizar
+ cálculos.
+ Por ejemplo, los bloques de hilos organizados en 1D tienen hilos organizados
+ de manera lineal; mientras que los bloques de hilos organizados en 2D y
+ 3D proporcionan una estructura de matriz o cubo para los hilos.
+ Esta jerarquía ayuda a organizar eficientemente los hilos para procesar
+ datos multidimensionales o realizar cálculos complejos en matrices, volúmenes
+ u otras estructuras de datos indexadas.
+ De esta forma, 
+\series bold
+blockDim.x
+\series default
+, 
+\series bold
+blockDim.
+\series default
+y y 
+\series bold
+blockDim.z
+\series default
+ dan el número de hilos en un bloque para una dirección en particular.
+ Cada hilo tiene un índice único dentro de su bloque.
+ Para acceder a estos índices dentro de la jerarquía de hilos se tienen
+ las variables 
+\series bold
+threadIdx.x
+\series default
+, 
+\series bold
+threadIdx.y
+\series default
+ y 
+\series bold
+threadIdx.z
+\series default
+.
+ Estos índices ayudan a los hilos a identificar su posición dentro de un
+ bloque y se utilizan para determinar qué elementos de datos procesar.
+\end_layout
+
+\begin_layout Standard
+\align block
+Por otro lado, los 
+\series bold
+grids
+\series default
+ de bloques constituyen una estructura fundamental para organizar y ejecutar
+ tareas en paralelo en la GPU.
+ Un grid se compone de múltiples bloques de hilos.
+ Así, 
+\series bold
+gridDim.x, gridDim.y
+\series default
+ y 
+\series bold
+gridDim.z 
+\series default
+representan el número de bloques en el grid para una dirección en particular.
+ También se tienen los valores de 
+\series bold
+blockIdx.x
+\series default
+, 
+\series bold
+blockIdx.y
+\series default
+ y 
+\series bold
+blockIdx.z
+\series default
+ para acceder a los bloques de esos índices dentro del grid.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename images/CUDA-GridBlockThread-Structure.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Otro concepto que se tiene es el de 
+\series bold
+stride
+\series default
+, el incremento o tamaño de paso utilizado al acceder a elementos en una
+ secuencia, matriz o región de memoria.
+ Define el espacio entre elementos consecutivos a los que accede.
+ Con esto se asegura que cada hilo procese un subconjunto único de los datos
+ sin redundancia o conflicto con otros hilos.
+ Por ejmplo, considera una situación donde tienes un vector de 1024 elementos
+ y 256 hilos.
+ Sin stride, si cada hilo procesara elementos consecutivos del 0 al 1023,
+ solo se tratarían los primeros 256 elementos, dejando una parte significativa
+ del vector sin procesar.
+ Al introducir un enfoque basado en estride, los hilos pueden cubrir colectivame
+nte todo el vector trabajando en subconjuntos de elementos no superpuestos,
+ asegurando que todos los elementos estén incluidos en el cálculo de la
+ media.
+\end_layout
+
+\begin_layout Standard
+Por último, sincronizar hilos en CUDA es fundamental para garantizar una
+ ejecución coordinada dentro de un bloque.
+ Para ello se tienen mecanismos como la función 
+\series bold
+__syncthreads()
+\series default
+, que permite a los hilos dentro del mismo bloque sincronizar su ejecución.
+ Cuando un hilo alcanza la llamada a __syncthreads(), espera hasta que todos
+ los demás hilos en el bloque alcancen el mismo punto antes de continuar
+ la ejecución.
+ Este punto de sincronización asegura que los datos compartidos se actualicen
+ correctamente y que los hilos no procedan con cálculos que dependan de
+ los resultados intermedios de otros hilos hasta que esos resultados estén
+ disponibles.
+ El uso cuidadoso de __syncthreads() es esencial para evitar posibles condicione
+s de carrera o bloqueos, garantizando un comportamiento coherente y predecible
+ entre los hilos dentro de un bloque durante la ejecución en paralelo.
+ Otro caso es la función 
+\series bold
+atomicAdd().
+
+\series default
+ Es una operación atómica especial disponible en CUDA que realiza una suma
+ atómica en una ubicación de memoria.
+ Las operaciones atómicas son esenciales en la programación paralela para
+ garantizar un comportamiento correcto cuando múltiples hilos acceden y
+ modifican la misma ubicación de memoria de forma simultánea.
+ En CUDA, atomicAdd() se utiliza para incrementar de manera atómica un valor
+ en la memoria global (o memoria compartida) en una cantidad específica.
+ Su sintaxis básica es: 
+\shape italic
+int atomicAdd(int* address, int val);
+\end_layout
+
+\begin_layout Subsection
+Tipos de funciones
+\end_layout
+
+\begin_layout Standard
+Las funciones en CUDA desempeñan un papel fundamental para llevar a cabo
+ el procesamiento paralelo en las GPUs.
+ Existen diferentes tipos de funciones utilizadas en la programación CUDA.
+ Los desarrolladores necesitan optimizar su código aprovechando el tipo
+ correcto de funciones para tareas específicas, gestionando de manera eficiente
+ el movimiento de datos entre el host y el dispositivo, y orquestando la
+ ejecución en paralelo de kernels para maximizar la utilización y el rendimiento
+ de la GPU.
+ Dominar estas funciones y sus roles permite a los desarrolladores aprovechar
+ todo el poder computacional de las GPUs para diversas aplicaciones, desde
+ simulaciones científicas hasta aprendizaje automático y más allá.
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Funciones Globales (Kernels)
+\series default
+: Estas funciones están precedidas por 
+\series bold
+__global__
+\series default
+ y son los puntos de entrada para la ejecución en paralelo en la GPU.
+ Pueden ser invocadas desde la CPU, pero se ejecutan en la GPU.
+ Estas funciones están diseñadas para realizar cálculos en paralelo y operan
+ en un gran número de hilos organizados en bloques y rejillas (
+\shape italic
+grid
+\shape default
+).
+ Los desarrolladores escriben estas funciones para llevar a cabo tareas
+ específicas que pueden beneficiarse de una paralelización masiva, aprovechando
+ la capacidad de la GPU para procesar datos simultáneamente.
+ La sintaxis de configuración de ejecución de un kernel es la siguiente:
+ 
+\series bold
+<<< M , T >>>
+\series default
+, donde de M es el número de bloques en el grid y T es el número de hilos
+ por bloque.
+ Para definir el número de bloques y de hilos se puede hacer con un entero
+ o con 
+\series bold
+dim3
+\series default
+.
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Funciones de Dispositivo
+\series default
+: Estas son funciones que se ejecutan en la GPU pero solo pueden ser llamadas
+ desde otras funciones en ejecución en la GPU.
+ Se denotan con la palabra clave 
+\series bold
+__device__
+\series default
+.
+ Las funciones de dispositivo se utilizan a menudo para encapsular cálculos
+ repetitivos u operaciones compartidas entre diferentes funciones.
+ Ayudan a modularizar el código y promueven la reutilización del código
+ dentro de la GPU.
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Funciones de Host:
+\series default
+ Estas funciones se ejecutan en la CPU (host) y pueden invocar funciones
+ y gestionar transferencias de datos entre la CPU y la GPU.
+ Las funciones de host son funciones típicas de C/C++ y se utilizan para
+ orquestar la ejecución del código CUDA.
+ Son responsables de configurar los datos, lanzar funciones y manejar los
+ resultados devueltos desde la GPU.
+\end_layout
+
+\begin_layout Section
+Entorno de desarrollo
+\end_layout
+
+\begin_layout Standard
+Para realizar esta práctica, se propo utilizar 
+\begin_inset CommandInset href
+LatexCommand href
+name "Google Colab"
+target "https://colab.google/"
+literal "false"
+
+\end_inset
+
+.
+ Una vez dentro hay que configurar el entorno para utilizar GPU.
+ Para ello, se va 
+\shape italic
+Entorno de ejecución > Cambiar tipo de entorno de ejecución
+\shape default
+ y se selecciona la opción de GPU.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename images/colab_1.png
+	scale 45
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename images/colab_2.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Ahora podemos comprobar las características de la GPU con el comando 
+\series bold
+nvidia-smi
+\series default
+:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename images/nvidia-smi.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Para compilar los programas vamos a utilizar 
+\series bold
+nvcc
+\series default
+, que es similar a gcc.
+ Podéis comprobar vuestra versión con el comando nvcc –version.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename images/nvcc.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Por último, los programas se puede escribir en el Google Colab.
+ Para guardarlos hay que escribir 
+\series bold
+%%writefile nombre_archivo.cu
+\series default
+ al principio del código.
+ Para compilarlo, se utiliza el comando nvcc de forma similar a gcc: 
+\shape italic
+nvcc hello.cu -o hello
+\shape default
+.
+ Para ejecutarlo es igual que en las prácticas de C, es decir, 
+\shape italic
+./hello
+\shape default
+.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename images/colab_writefile.png
+	scale 70
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Ejemplos
+\end_layout
+
+\begin_layout Subsection
+Hello World
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "examples/hello_world.cu"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+cudaDeviceSynchronize()
+\series default
+ es una función de CUDA que actúa como un punto de sincronización para el
+ hilo de CPU que la llama.
+ Su propósito es asegurarse de que la GPU haya completado todas sus tareas
+ antes de permitir que el hilo de CPU continúe con la ejecución adicional.
+\end_layout
+
+\begin_layout Subsection
+Thread ID
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "examples/thread_id.cu"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Con 
+\series bold
+dim3 threadsPerBlock(3, 3);
+\series default
+ definimos el tamaño de los bloques como matrices de 3x3 hilos.
+\end_layout
+
+\begin_layout Subsection
+Gestión de memoria
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "examples/memory.cu"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+cudaMemcpyHostToDevice
+\series default
+: transferimos memoria de CPU a GPU
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+cudaMemcpyDeviceToHost
+\series default
+: transferimos memoria de GPU a CPU
+\end_layout
+
+\begin_layout Subsection
+Suma de vectores
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "examples/vector_sum.cu"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Ejercicios propuestos
+\end_layout
+
+\begin_layout Subsection
+Inicializa un vector
+\end_layout
+
+\begin_layout Standard
+Escribe un programa en C que inicializa un vector de tamaño 128, utilizando
+ un kernel CUDA, con los indetificadores de los hilos.
+ Utiliza un tamaño de bloque de 8.
+ Repite el ejercicio utilizando un tamaño de bloque de 8 y tamaño de grid
+ 8.
+ 
+\series bold
+Nota
+\series default
+: tenéis que usar stride en la segunda parte.
+\end_layout
+
+\begin_layout Subsection
+Suma dos vectores
+\end_layout
+
+\begin_layout Standard
+Escribe un programa en C que sume dos vectores de tamaño 128 utilizando
+ un kernel CUDA.
+ Los vectores se tienen que inicializar con números aleatorios entre 1 y
+ 10.
+ El resutlado se tiene que guardar en un tercer vector.
+\end_layout
+
+\begin_layout Subsection
+Suma los elementos de un vector
+\end_layout
+
+\begin_layout Standard
+Escribe un programa en C que suma los elementos de un vector de tamaño 1024
+ utilizando un kernel de CUDA.
+ El vector se tiene que inicializar con números aleatorios entre 5 y 15.
+ El tamaño del grid tiene que ser de 16 bloques y el tamaño de bloque de
+ 16 hilos.
+ 
+\series bold
+Nota
+\series default
+: tenéis que usar stride y podéis usar atomicAdd.
+\end_layout
+
+\begin_layout Subsection
+Suma dos matrices
+\end_layout
+
+\begin_layout Standard
+Escribe un programa en C que sume dos matrices 100x100 utilizando un kernel
+ de CUDA.
+ Las matrices se tienen que inicializar con números aleatorios entre 10
+ y 20.
+ El resutlado se tiene que guardar en una tercera matriz.
+ 
+\series bold
+Nota
+\series default
+: tenéis que usar dim3 para definir el tamaño del grid y de los bloques.
+\end_layout
+
+\end_body
+\end_document
